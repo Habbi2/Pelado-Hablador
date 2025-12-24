@@ -24,7 +24,7 @@ class PNGTuber {
         this.dataArray = null;
         
         // Settings (defaults)
-        this.threshold = 30;
+        this.threshold = 20;
         this.isTalking = false;
         this.smoothedVolume = 0;
         
