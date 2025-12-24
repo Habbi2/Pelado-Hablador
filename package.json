@@ -1,0 +1,12 @@
+{
+  "name": "pngtuber",
+  "version": "1.0.0",
+  "description": "Audio-reactive PNGTuber avatar for streaming - works as OBS browser source",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": ["pngtuber", "vtuber", "avatar", "streaming", "obs"],
+  "author": "",
+  "license": "MIT"
+}

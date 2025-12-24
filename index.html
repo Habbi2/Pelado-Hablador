@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNGTuber - Audio Reactive Avatar</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Avatar Container -->
+    <div id="avatar-container" class="avatar-container">
+        <svg 
+            id="avatar" 
+            class="avatar" 
+            viewBox="0 0 200 220" 
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <!-- Definitions for gradients -->
+            <defs>
+                <!-- Skin gradient -->
+                <radialGradient id="skinGradient" cx="50%" cy="30%" r="60%">
+                    <stop offset="0%" id="skin-light" stop-color="#ffe4d4"/>
+                    <stop offset="100%" id="skin-base" stop-color="#f5d0c5"/>
+                </radialGradient>
+                
+                <!-- Beard gradient -->
+                <linearGradient id="beardGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" id="beard-light" stop-color="#3d3d3d"/>
+                    <stop offset="100%" id="beard-dark" stop-color="#1a1a1a"/>
+                </linearGradient>
+                
+                <!-- Eye shine -->
+                <radialGradient id="eyeShine" cx="30%" cy="30%" r="50%">
+                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            
+            <!-- Main avatar group with breathing animation -->
+            <g id="avatar-body" class="breathing">
+                
+                <!-- Shadow under head -->
+                <ellipse cx="100" cy="195" rx="45" ry="12" fill="rgba(0,0,0,0.2)" class="shadow"/>
+                
+                <!-- Ears (behind head) -->
+                <ellipse cx="35" cy="100" rx="12" ry="18" fill="url(#skinGradient)"/>
+                <ellipse cx="165" cy="100" rx="12" ry="18" fill="url(#skinGradient)"/>
+                
+                <!-- Earbuds -->
+                <g id="earbuds">
+                    <!-- Left earbud -->
+                    <circle cx="32" cy="100" r="8" fill="#ffffff"/>
+                    <circle cx="32" cy="100" r="5" fill="#e0e0e0"/>
+                    <circle cx="32" cy="100" r="2" fill="#333"/>
+                    
+                    <!-- Right earbud -->
+                    <circle cx="168" cy="100" r="8" fill="#ffffff"/>
+                    <circle cx="168" cy="100" r="5" fill="#e0e0e0"/>
+                    <circle cx="168" cy="100" r="2" fill="#333"/>
+                    
+                    <!-- Earbud wires -->
+                    <path d="M 32 108 Q 32 140, 60 160 Q 80 175, 100 180" 
+                          stroke="#ffffff" stroke-width="2" fill="none" opacity="0.6"/>
+                    <path d="M 168 108 Q 168 140, 140 160 Q 120 175, 100 180" 
+                          stroke="#ffffff" stroke-width="2" fill="none" opacity="0.6"/>
+                </g>
+                
+                <!-- Head (bald) -->
+                <ellipse cx="100" cy="95" rx="65" ry="75" fill="url(#skinGradient)"/>
+                
+                <!-- Subtle head shine (bald highlight) -->
+                <ellipse cx="85" cy="50" rx="30" ry="20" fill="white" opacity="0.15"/>
+                
+                <!-- Beard -->
+                <path id="beard" d="
+                    M 45 105 
+                    Q 40 130, 50 155 
+                    Q 60 175, 100 185 
+                    Q 140 175, 150 155 
+                    Q 160 130, 155 105
+                    Q 150 95, 140 100
+                    Q 120 95, 100 100
+                    Q 80 95, 60 100
+                    Q 50 95, 45 105
+                    Z
+                " fill="url(#beardGradient)"/>
+                
+                <!-- Beard texture lines -->
+                <g opacity="0.3" stroke="#0a0a0a" stroke-width="1" fill="none">
+                    <path d="M 60 120 Q 65 150, 70 165"/>
+                    <path d="M 80 115 Q 82 145, 85 170"/>
+                    <path d="M 100 110 Q 100 150, 100 175"/>
+                    <path d="M 120 115 Q 118 145, 115 170"/>
+                    <path d="M 140 120 Q 135 150, 130 165"/>
+                </g>
+                
+                <!-- Eyes group (for blinking) -->
+                <g id="eyes" class="blinking">
+                    <!-- Left eye -->
+                    <ellipse cx="70" cy="90" rx="12" ry="14" fill="#1a1a1a"/>
+                    <ellipse cx="70" cy="90" rx="10" ry="12" fill="#2d2d2d"/>
+                    <circle cx="67" cy="87" r="4" fill="url(#eyeShine)"/>
+                    
+                    <!-- Right eye -->
+                    <ellipse cx="130" cy="90" rx="12" ry="14" fill="#1a1a1a"/>
+                    <ellipse cx="130" cy="90" rx="10" ry="12" fill="#2d2d2d"/>
+                    <circle cx="127" cy="87" r="4" fill="url(#eyeShine)"/>
+                </g>
+                
+                <!-- Eyebrows -->
+                <g id="eyebrows" fill="url(#beardGradient)">
+                    <path d="M 52 72 Q 70 65, 85 72" stroke-width="4" stroke="url(#beardGradient)" fill="none" stroke-linecap="round"/>
+                    <path d="M 115 72 Q 130 65, 148 72" stroke-width="4" stroke="url(#beardGradient)" fill="none" stroke-linecap="round"/>
+                </g>
+                
+                <!-- Mouth - Closed (visible by default) -->
+                <g id="mouth-closed" class="mouth">
+                    <path d="M 85 125 Q 100 132, 115 125" 
+                          stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </g>
+                
+                <!-- Mouth - Open (hidden by default) -->
+                <g id="mouth-open" class="mouth" style="display: none;">
+                    <ellipse cx="100" cy="128" rx="18" ry="14" fill="#1a1a1a"/>
+                    <ellipse cx="100" cy="125" rx="14" ry="8" fill="#4a1a1a"/>
+                    <!-- Tongue hint -->
+                    <ellipse cx="100" cy="134" rx="10" ry="6" fill="#cc6666"/>
+                </g>
+                
+                <!-- Nose (subtle) -->
+                <path d="M 100 95 Q 105 105, 100 110" 
+                      stroke="#e0b8a8" stroke-width="2" fill="none" stroke-linecap="round"/>
+                
+            </g>
+        </svg>
+    </div>
+    
+    <!-- Mic permission prompt -->
+    <div id="mic-prompt" class="mic-prompt">
+        <div class="prompt-content">
+            <div class="prompt-icon">🎤</div>
+            <h2>Enable Microphone</h2>
+            <p>Click to allow microphone access for audio-reactive avatar</p>
+            <button id="enable-mic" class="enable-btn">Enable Mic</button>
+        </div>
+    </div>
+    
+    <!-- Settings panel (hidden by default) -->
+    <div id="settings-panel" class="settings-panel hidden">
+        <button id="toggle-settings" class="settings-toggle">⚙️</button>
+        <div class="settings-content">
+            <h3>Settings</h3>
+            
+            <label>
+                <span>Threshold</span>
+                <input type="range" id="threshold-slider" min="5" max="100" value="30">
+                <span id="threshold-value">30</span>
+            </label>
+            
+            <label>
+                <span>Skin Tone</span>
+                <input type="color" id="skin-color" value="#f5d0c5">
+            </label>
+            
+            <label>
+                <span>Beard Color</span>
+                <input type="color" id="beard-color" value="#2d2d2d">
+            </label>
+            
+            <div class="volume-meter">
+                <span>Mic Level</span>
+                <div class="meter-bar">
+                    <div id="volume-bar" class="meter-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
