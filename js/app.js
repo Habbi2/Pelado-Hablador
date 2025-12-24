@@ -1,6 +1,7 @@
 /**
  * PNGTuber - Audio Reactive Avatar
  * Web Audio API + SVG State Management
+ * Supports OBS WebSocket for browser source mic access
  */
 
 class PNGTuber {
@@ -23,6 +24,11 @@ class PNGTuber {
         this.microphone = null;
         this.dataArray = null;
         
+        // OBS WebSocket state
+        this.obsWebSocket = null;
+        this.obsConnected = false;
+        this.obsAudioSource = 'Mic/Aux'; // Default OBS audio source name
+        
         // Settings (defaults)
         this.threshold = 20;
         this.isTalking = false;
@@ -37,6 +43,7 @@ class PNGTuber {
     /**
      * Parse URL parameters for configuration
      * Example: ?threshold=40&skin=f5d0c5&beard=2d2d2d&obs=true&settings=true
+     * OBS WebSocket: ?obs=true&port=4455&password=yourpassword&source=Mic/Aux
      */
     parseURLParams() {
         const params = new URLSearchParams(window.location.search);
@@ -66,6 +73,17 @@ class PNGTuber {
         if (params.has('settings') && params.get('settings') === 'true') {
             this.settingsPanel.classList.remove('hidden');
         }
+        
+        // OBS WebSocket port (default 4455)
+        this.obsPort = params.get('port') || '4455';
+        
+        // OBS WebSocket password
+        this.obsPassword = params.get('password') || '';
+        
+        // OBS audio source name
+        if (params.has('source')) {
+            this.obsAudioSource = params.get('source');
+        }
     }
     
     /**
@@ -75,8 +93,171 @@ class PNGTuber {
         const params = new URLSearchParams(window.location.search);
         if (params.has('obs') && params.get('obs') === 'true') {
             document.body.classList.add('obs-mode');
-            // Auto-start mic in OBS mode
+            // Try OBS WebSocket first, fallback to mic
+            this.initOBSWebSocket();
+        }
+    }
+    
+    /**
+     * Initialize OBS WebSocket connection
+     */
+    async initOBSWebSocket() {
+        try {
+            const wsUrl = `ws://127.0.0.1:${this.obsPort}`;
+            console.log(`🔌 Connecting to OBS WebSocket at ${wsUrl}...`);
+            
+            this.obsWebSocket = new WebSocket(wsUrl);
+            
+            this.obsWebSocket.onopen = () => {
+                console.log('🔌 OBS WebSocket connected!');
+                this.obsConnected = true;
+                this.micPrompt.classList.add('hidden');
+                
+                // Authenticate if password is set
+                if (this.obsPassword) {
+                    this.obsAuthenticate();
+                } else {
+                    // Start polling for audio levels
+                    this.startOBSAudioLoop();
+                }
+            };
+            
+            this.obsWebSocket.onmessage = (event) => {
+                this.handleOBSMessage(JSON.parse(event.data));
+            };
+            
+            this.obsWebSocket.onerror = (error) => {
+                console.log('OBS WebSocket error, falling back to mic...', error);
+                this.initAudio();
+            };
+            
+            this.obsWebSocket.onclose = () => {
+                console.log('OBS WebSocket closed');
+                this.obsConnected = false;
+            };
+            
+            // Timeout fallback - if OBS doesn't connect in 3 seconds, try mic
+            setTimeout(() => {
+                if (!this.obsConnected) {
+                    console.log('OBS WebSocket timeout, falling back to mic...');
+                    if (this.obsWebSocket) {
+                        this.obsWebSocket.close();
+                    }
+                    this.initAudio();
+                }
+            }, 3000);
+            
+        } catch (error) {
+            console.log('OBS WebSocket not available, falling back to mic...', error);
             this.initAudio();
+        }
+    }
+    
+    /**
+     * Authenticate with OBS WebSocket (if password required)
+     */
+    obsAuthenticate() {
+        // For OBS WebSocket 5.x, send identify request
+        // Simple auth - for basic use cases
+        this.obsSend({
+            op: 1,
+            d: {
+                rpcVersion: 1,
+                authentication: this.obsPassword
+            }
+        });
+    }
+    
+    /**
+     * Send message to OBS WebSocket
+     */
+    obsSend(data) {
+        if (this.obsWebSocket && this.obsWebSocket.readyState === WebSocket.OPEN) {
+            this.obsWebSocket.send(JSON.stringify(data));
+        }
+    }
+    
+    /**
+     * Handle incoming OBS WebSocket messages
+     */
+    handleOBSMessage(message) {
+        // OBS WebSocket 5.x protocol
+        if (message.op === 0) {
+            // Hello message - need to identify
+            this.obsSend({
+                op: 1,
+                d: {
+                    rpcVersion: 1
+                }
+            });
+        } else if (message.op === 2) {
+            // Identified - start audio loop
+            console.log('✅ OBS WebSocket authenticated');
+            this.startOBSAudioLoop();
+        } else if (message.op === 7) {
+            // Request response
+            if (message.d && message.d.requestType === 'GetInputVolume') {
+                this.handleOBSVolumeResponse(message.d.responseData);
+            }
+        }
+    }
+    
+    /**
+     * Handle OBS volume response
+     */
+    handleOBSVolumeResponse(data) {
+        if (data && typeof data.inputVolumeMul !== 'undefined') {
+            // Convert multiplier to 0-100 scale
+            // inputVolumeMul is linear (0.0 to 1.0+)
+            const volume = Math.min(100, Math.max(0, data.inputVolumeMul * 100));
+            this.processVolume(volume);
+        }
+    }
+    
+    /**
+     * Start OBS audio level polling loop
+     */
+    startOBSAudioLoop() {
+        const pollAudio = () => {
+            if (!this.obsConnected) return;
+            
+            // Request volume level from OBS
+            this.obsSend({
+                op: 6,
+                d: {
+                    requestType: 'GetInputVolume',
+                    requestId: 'vol_' + Date.now(),
+                    requestData: {
+                        inputName: this.obsAudioSource
+                    }
+                }
+            });
+            
+            // Poll at ~60fps
+            setTimeout(pollAudio, 16);
+        };
+        
+        pollAudio();
+    }
+    
+    /**
+     * Process volume level (shared between mic and OBS modes)
+     */
+    processVolume(volume) {
+        // Smooth the volume for less jittery response
+        this.smoothedVolume = this.smoothedVolume * 0.7 + volume * 0.3;
+        
+        // Update volume meter
+        if (this.volumeBar) {
+            this.volumeBar.style.width = `${this.smoothedVolume}%`;
+        }
+        
+        // Check against threshold
+        const shouldTalk = this.smoothedVolume > this.threshold;
+        
+        if (shouldTalk !== this.isTalking) {
+            this.isTalking = shouldTalk;
+            this.updateMouthState();
         }
     }
     
@@ -224,21 +405,8 @@ class PNGTuber {
             // Normalize to 0-100
             const volume = Math.round((average / 255) * 100);
             
-            // Smooth the volume for less jittery response
-            this.smoothedVolume = this.smoothedVolume * 0.7 + volume * 0.3;
-            
-            // Update volume meter
-            if (this.volumeBar) {
-                this.volumeBar.style.width = `${this.smoothedVolume}%`;
-            }
-            
-            // Check against threshold
-            const shouldTalk = this.smoothedVolume > this.threshold;
-            
-            if (shouldTalk !== this.isTalking) {
-                this.isTalking = shouldTalk;
-                this.updateMouthState();
-            }
+            // Use shared volume processing
+            this.processVolume(volume);
             
             // Continue loop
             requestAnimationFrame(processAudio);

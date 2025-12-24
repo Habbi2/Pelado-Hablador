@@ -31,14 +31,32 @@ Then open `http://localhost:3000` in your browser.
 
 ## OBS Setup
 
-1. Add a **Browser Source** in OBS
-2. Set URL to your deployed Vercel URL with `?obs=true`:
-   ```
-   https://your-app.vercel.app/?obs=true
-   ```
-3. Set width: `400`, height: `440`
-4. ✅ Check "Control audio via OBS"
-5. Done! Avatar will react to your mic
+### Option 1: OBS WebSocket (Recommended)
+
+This lets OBS send your mic audio levels directly to the avatar - no browser mic permission needed!
+
+1. **Enable OBS WebSocket:**
+   - In OBS, go to **Tools → WebSocket Server Settings**
+   - ✅ Enable WebSocket server
+   - Note the port (default: `4455`)
+   - Set a password if you want (optional)
+
+2. **Add Browser Source in OBS:**
+   - URL: `https://pelado-hablador.vercel.app/?obs=true`
+   - Width: `400`, Height: `440`
+   
+3. **Configure audio source (if needed):**
+   - Add `&source=YOUR_MIC_NAME` to match your OBS audio input name
+   - Example: `?obs=true&source=Mic/Aux` or `?obs=true&source=Microphone`
+
+### Option 2: Window Capture
+
+If WebSocket doesn't work:
+
+1. Open `https://pelado-hablador.vercel.app/` in **Chrome**
+2. Grant microphone permission
+3. In OBS, add **Window Capture** instead of Browser Source
+4. Select the Chrome window
 
 ## URL Parameters
 
@@ -49,8 +67,11 @@ Customize your avatar via URL parameters:
 | `threshold` | `30` | Mic sensitivity (5-100). Lower = more sensitive |
 | `skin` | `f5d0c5` | Skin color (hex without #) |
 | `beard` | `2d2d2d` | Beard color (hex without #) |
-| `obs` | `false` | OBS mode - hides UI, auto-starts mic |
+| `obs` | `false` | OBS mode - hides UI, connects to OBS WebSocket |
 | `settings` | `false` | Show settings panel on load |
+| `port` | `4455` | OBS WebSocket port |
+| `password` | `` | OBS WebSocket password (if set) |
+| `source` | `Mic/Aux` | OBS audio input source name |
 
 ### Example URLs
 
