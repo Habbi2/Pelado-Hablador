@@ -197,13 +197,12 @@ class PNGTuber {
             
         } catch (error) {
             console.error('Microphone access denied:', error);
-            // Only show alert if not in OBS mode
-            const params = new URLSearchParams(window.location.search);
-            if (!params.has('obs') || params.get('obs') !== 'true') {
-                alert('Microphone access is required for the avatar to react to your voice.');
-            } else {
-                console.log('OBS mode: Enable "Control audio via Streamlabs Desktop" or use browser source audio capture');
+            // Show error in UI instead of alert
+            const promptText = this.micPrompt.querySelector('p');
+            if (promptText) {
+                promptText.textContent = 'Mic access denied. Use Window Capture in OBS instead of Browser Source.';
             }
+            console.log('Tip: Open this page in Chrome, grant mic access, then use Window Capture in OBS');
         }
     }
     
