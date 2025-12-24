@@ -197,7 +197,13 @@ class PNGTuber {
             
         } catch (error) {
             console.error('Microphone access denied:', error);
-            alert('Microphone access is required for the avatar to react to your voice.');
+            // Only show alert if not in OBS mode
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('obs') || params.get('obs') !== 'true') {
+                alert('Microphone access is required for the avatar to react to your voice.');
+            } else {
+                console.log('OBS mode: Enable "Control audio via Streamlabs Desktop" or use browser source audio capture');
+            }
         }
     }
     
